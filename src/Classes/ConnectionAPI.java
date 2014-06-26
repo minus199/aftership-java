@@ -12,7 +12,7 @@ import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import Enums.Field;
+import Enums.*;
 
 /**
  * ConnectionAPI is the class responsible of the iteration with the HTTP API of Aftership, it wrap all the
@@ -29,7 +29,12 @@ public class ConnectionAPI {
     public ConnectionAPI(String keyAPI) {
         this.keyAPI = keyAPI;
     }
+    public ConnectionAPI(String keyAPI,String urlServer) {
 
+        this.keyAPI = keyAPI;
+        this.URL_SERVER = urlServer;
+
+    }
     /**
      * Return the tracking information of the last checkpoint of a single tracking
      *
@@ -70,15 +75,15 @@ public class ConnectionAPI {
      * @throws   java.text.ParseException    If the response can not be parse to JSONObject
      * @see Checkpoint
      **/
-    public Checkpoint getLastCheckpoint(String trackingNumber,String slug,List<Field> fields, String lang)
+    public Checkpoint getLastCheckpoint(String trackingNumber,String slug,List<FieldCheckpoint> fields, String lang)
             throws AftershipAPIException,IOException,ParseException{
 
         String params;
         QueryString qs = new QueryString();
         if (fields!=null) qs.add("fields", fields);
         if (lang!=null || !lang.equals("")) qs.add("lang",lang);
-        params = qs.toString().replace('&','?');
-
+        params = qs.toString().replaceFirst("&","?");
+     //   System.out.println(params);
         JSONObject response = this.request("GET","/last_checkpoint/"+slug+"/"+trackingNumber+params,null);
         JSONObject checkpointJSON = response.getJSONObject("data").getJSONObject("checkpoint");
         Checkpoint checkpoint = null;
@@ -153,14 +158,14 @@ public class ConnectionAPI {
      * @throws  java.text.ParseException    If the response can not be parse to JSONObject
      * @see     Tracking
      **/
-    public Tracking getTrackingByNumber(String trackingNumber,String slug,List<Field> fields,String lang)
+    public Tracking getTrackingByNumber(String trackingNumber,String slug,List<FieldTracking> fields,String lang)
             throws AftershipAPIException,IOException,ParseException{
 
         String params;
         QueryString qs = new QueryString();
         if (fields!=null) qs.add("fields", fields);
         if (lang!=null || !lang.equals("")) qs.add("lang",lang);
-        params = qs.toString().replace('&','?');
+        params = qs.toString().replaceFirst("&","?");
 
         JSONObject response = this.request("GET","/trackings/"+slug+"/"+trackingNumber+params,null);
         JSONObject trackingJSON = response.getJSONObject("data").getJSONObject("tracking");
@@ -389,6 +394,7 @@ public class ConnectionAPI {
 
         HttpURLConnection connection;
         URL serverAddress= new URL(new URL(URL_SERVER),VERSION_API+ url);
+        //System.out.println("Method: "+method+" Url: "+serverAddress.toString());
         connection= (HttpURLConnection)serverAddress.openConnection();
         connection.setRequestMethod(method);
         connection.setReadTimeout(10000);
@@ -477,6 +483,10 @@ public class ConnectionAPI {
         }
     }
 
-
+//    /** only for testing*/
+//    public void setServer(String urlServer){
+//
+//     this.URL_SERVER = urlServer;
+//    }
 
 }

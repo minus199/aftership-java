@@ -1,5 +1,6 @@
 package Tests;
 
+import Enums.*;
 import Enums.ISO3Country;
 import Enums.StatusTag;
 import org.junit.*;
@@ -14,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ConnectionAPITest {
     final static int TOTAL_COURIERS_API = 190;
-    ConnectionAPI connection = new ConnectionAPI("a61d6204-6477-4f6d-93ec-86c4f872fb6b");
+    ConnectionAPI connection = new ConnectionAPI("a61d6204-6477-4f6d-93ec-86c4f872fb6b","http://54.88.19.48:3003");
     //getCouriers
     HashMap<String,String> firstCourier= new HashMap<String,String>();
     HashMap<String,String> lastCourier=  new HashMap<String,String>();
@@ -51,8 +52,6 @@ public class ConnectionAPITest {
     @Before
     public void setUp()throws Exception{
 
-        //getCouriers
-
         //first courier
         firstCourier.put("slug","india-post-int");
         firstCourier.put("name","India Post International");
@@ -72,9 +71,17 @@ public class ConnectionAPITest {
             //delete the tracking we are going to post (in case it exist)
             try {
                 connection.deleteTracking("05167019264110", "dpd");
+            } catch (Exception e) {
+                System.out.println("**"+e.getMessage());
+            }
+            try {
                 connection.deleteTracking(trackingNumberToDetect, "dpd");
+            } catch (Exception e) {
+                System.out.println("**"+e.getMessage());
+            }
                 Tracking newTracking = new Tracking(trackingNumberDelete);
                 newTracking.setSlug(slugDelete);
+            try {
                 connection.postTracking(newTracking);
 
             } catch (Exception e) {
@@ -111,7 +118,7 @@ public class ConnectionAPITest {
         try{
             connectionBadKey.getCouriers();
         }catch (AftershipAPIException e){
-            Assert.assertEquals("Exception should be InvalidCredentials", "InvalidCredentials. Invalid API Key.", e.getMessage());
+            Assert.assertEquals("Exception should be InvalidCredentials", "InvalidCredentials. Invalid API Key. (001)", e.getMessage());
         }
 
     }
@@ -267,11 +274,39 @@ public class ConnectionAPITest {
         List<Tracking> totalSpain2 =connection.getTrackingsNext(param1);
         Assert.assertEquals("Should be 3 trackings", 3, totalSpain2.size());
 
+        ParametersTracking param3 = new ParametersTracking();
+        param3.setLimit(195);
+        List<Tracking> totalOutDelivery1=connection.getTrackings(param3);
+        Assert.assertEquals("Should be 195 trackings", 195, totalOutDelivery1.size());
 
-        ParametersTracking param2 = new ParametersTracking();
-        param2.addTag(StatusTag.OutForDelivery);
-        List<Tracking> totalOutDelivery=connection.getTrackings(param2);
-        Assert.assertEquals("Should be 3 trackings", 3, totalOutDelivery.size());
+        ParametersTracking param4 = new ParametersTracking();
+        param4.setKeyword("title");
+        param4.addField(FieldTracking.title);
+        List<Tracking> totalOutDelivery2=connection.getTrackings(param4);
+        Assert.assertEquals("Should be 1 trackings", 2, totalOutDelivery2.size());
+        Assert.assertEquals("Should be equal", "this title", totalOutDelivery2.get(0).getTitle());
+
+
+        ParametersTracking param5 = new ParametersTracking();
+        param5.addField(FieldTracking.tracking_number);
+        List<Tracking> totalOutDelivery3=connection.getTrackings(param5);
+        Assert.assertEquals("Should be null", null, totalOutDelivery3.get(0).getTitle());
+
+        ParametersTracking param6 = new ParametersTracking();
+        param6.addField(FieldTracking.tracking_number);
+        param6.addField(FieldTracking.title);
+        param6.addField(FieldTracking.checkpoints);
+        param6.addField(FieldTracking.order_id);
+        param6.addField(FieldTracking.tag);
+        param6.addField(FieldTracking.order_id);
+        List<Tracking> totalOutDelivery4=connection.getTrackings(param6);
+        Assert.assertEquals("Should be null", null, totalOutDelivery4.get(0).getSlug());
+
+        ParametersTracking param7 = new ParametersTracking();
+        param7.addOrigin(ISO3Country.ESP);
+        List<Tracking> totalOutDelivery5=connection.getTrackings(param7);
+        Assert.assertEquals("Should be equal", 8, totalOutDelivery5.size());
+
 
 //        ParametersTracking param3 = new ParametersTracking();
 //        int totalTotal = connection.getTracking(param3);
@@ -281,6 +316,10 @@ public class ConnectionAPITest {
 //            System.out.println(++number +". "+param3.next().getTrackingNumber());
 //        }
 
+        ParametersTracking param2 = new ParametersTracking();
+        param2.addTag(StatusTag.OutForDelivery);
+        List<Tracking> totalOutDelivery=connection.getTrackings(param2);
+        Assert.assertEquals("Should be 2 trackings", 1, totalOutDelivery.size());
 
     }
 
@@ -313,6 +352,16 @@ public class ConnectionAPITest {
 
     }
 
+    @Test
+    public void testGetTrackingByNumber2()throws Exception{
+        List<FieldTracking> fields = new ArrayList<FieldTracking>();
+        fields.add(FieldTracking.tracking_number);
+        Tracking tracking3 = connection.getTrackingByNumber("RC328021065CN","canada-post",fields,"");
+        Assert.assertEquals("Should be equals TrackingNumber", "RC328021065CN", tracking3.getTrackingNumber());
+        Assert.assertEquals("Should be equals title", null, tracking3.getTitle());
+        Assert.assertEquals("Should be equals slug", null, tracking3.getSlug());
+        Assert.assertEquals("Should be equals checkpoint", null, tracking3.getCheckpoints());
+    }
     @Test
     public void testPutTracking()throws Exception{
         Tracking tracking = new Tracking("RC328021065CN");
@@ -406,6 +455,21 @@ public class ConnectionAPITest {
             assertEquals("It should return a exception if the slug is not informed properly"
                     , "ResourceNotFound. Tracking does not exist.", e.getMessage());
         }
+
+    }
+    @Test
+    public void testGetLastCheckpoint2()throws Exception{
+        List<FieldCheckpoint> fields = new ArrayList<FieldCheckpoint>();
+        fields.add(FieldCheckpoint.message);
+        Checkpoint newCheckpoint1 = connection.getLastCheckpoint("GM605112270084510370", "dhl-global-mail",fields,"");
+        assertEquals("Should be equals message", "Delivered", newCheckpoint1.getMessage());
+        assertEquals("Should be equals",null,newCheckpoint1.getCreatedAt());
+
+        fields.add(FieldCheckpoint.created_at);
+        System.out.println("list:"+fields.toString());
+        Checkpoint newCheckpoint2 = connection.getLastCheckpoint("GM605112270084510370", "dhl-global-mail",fields,"");
+        assertEquals("Should be equals message", "Delivered", newCheckpoint2.getMessage());
+        assertEquals("Should be equals","2014-06-17T04:19:38+00:00",newCheckpoint2.getCreatedAt());
     }
 
 

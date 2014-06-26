@@ -24,7 +24,7 @@ class QueryString {
 
     public void add(String name, List<?> list) {
         query += "&";
-        String value = list.toString().replace("[", "").replace("]","");
+        String value = list.toString().replace("[", "").replace("]","").replace(" ","");
         encode(name, value);
     }
 
