@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ConnectionAPITest {
     final static int TOTAL_COURIERS_API = 190;
-    ConnectionAPI connection = new ConnectionAPI("a61d6204-6477-4f6d-93ec-86c4f872fb6b","http://54.88.19.48:3003");
+    ConnectionAPI connection = new ConnectionAPI("a61d6204-6477-4f6d-93ec-86c4f872fb6b");
     //getCouriers
     HashMap<String,String> firstCourier= new HashMap<String,String>();
     HashMap<String,String> lastCourier=  new HashMap<String,String>();
