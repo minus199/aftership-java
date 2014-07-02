@@ -2,3 +2,6 @@
 *.war
 *.ear
 *.class
+.idea
+*.iml
+To_do.txt
